@@ -1,0 +1,6 @@
+# Settings for scripts/build_nlp_dataset.py (Dataset 4). Changing these changes the frozen splits!
+seed: 42
+per_family: 28                 # queries generated per scenario family
+val_families_per_intent: 2
+test_families_per_intent: 2
+split_search_trials: 20000     # seeded random search for a balanced family-level split
