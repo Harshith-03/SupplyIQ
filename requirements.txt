@@ -1,0 +1,29 @@
+# Core deps for Phases 0-2 (data, forecasting, NLP training).
+# PyTorch is installed SEPARATELY first (CUDA vs CPU build) -- see README "Setup".
+# Agent / API / UI deps (google-genai, langgraph, fastapi, streamlit) get added in Phase 4.
+
+# data
+numpy>=1.26,<3
+pandas>=2.2,<3
+pyarrow>=16
+
+# classical ML + forecasting
+scikit-learn>=1.5,<1.8
+xgboost>=2.1,<4
+
+# transformers (RoBERTa); Trainer needs accelerate
+transformers>=4.45,<5
+accelerate>=0.34
+
+# utilities
+pyyaml>=6
+tqdm>=4.66
+python-dotenv>=1.0
+matplotlib>=3.8
+kaggle>=1.6
+
+# dev
+jupyter
+ipykernel
+pytest>=8
+ruff>=0.6

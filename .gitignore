@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Secrets ---
+.env
+kaggle.json
+
+# --- Large / regenerable data (never commit) ---
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Trained model artifacts (share via Drive/Release, not git) ---
+models/*
+!models/.gitkeep
+*.pt
+*.bin
+*.safetensors
+*.joblib
+*.ubj
+
+# --- Experiment tracking / logs ---
+wandb/
+mlruns/
+runs/
+logs/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
