@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    # labeled/unlabeled so adding the approval label re-runs the frozen-file check
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "ruff>=0.6"
+      - name: Ruff lint
+        run: ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install deps (CPU torch -- CI has no GPU)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Pytest
+        run: pytest -q
+
+  repo-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block secrets, raw data, model artifacts and large files
+        run: |
+          fail=0
+          bad=$(git ls-files | grep -E '(^|/)\.env$|kaggle\.json$|^data/raw/.+|^data/processed/.+|^models/.+|\.(pt|bin|safetensors|joblib|ubj)$' | grep -v '\.gitkeep$' || true)
+          if [ -n "$bad" ]; then echo "::error::Files that must not be committed:"; echo "$bad"; fail=1; fi
+          big=$(git ls-files -z | xargs -0 du -k 2>/dev/null | awk '$1 > 5120 {print $2}')
+          if [ -n "$big" ]; then echo "::error::Files over 5 MB (share via Drive instead):"; echo "$big"; fail=1; fi
+          exit $fail
+
+  frozen-files:
+    # Enforces "frozen artifacts change only with team agreement".
+    # Paths are listed in .github/frozen-paths.txt. To change one, the PR needs
+    # the label `frozen-change-approved`, added after the whole team agrees.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check frozen paths
+        env:
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'frozen-change-approved') }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE"...HEAD)
+          hits=""
+          while IFS= read -r p; do
+            [ -z "$p" ] || [ "${p#\#}" != "$p" ] && continue
+            m=$(echo "$changed" | grep -E "^${p}" | grep -v '\.gitkeep$' || true)
+            [ -n "$m" ] && hits="$hits$m"$'\n'
+          done < .github/frozen-paths.txt
+          if [ -n "$hits" ] && [ "$APPROVED" != "true" ]; then
+            echo "::error::This PR changes frozen files. Get team agreement, then add the 'frozen-change-approved' label:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "Frozen-file check passed."

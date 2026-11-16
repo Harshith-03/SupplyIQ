@@ -1,0 +1,6 @@
+# Path prefixes (regex, matched from repo root) that need the `frozen-change-approved`
+# PR label to change. Add a line here in the same PR that first freezes an artifact.
+data/nlp/splits/
+# Planned additions once they are finalized:
+# src/supplyiq/eval/nlp_metrics.py
+# data/nlp/test_
