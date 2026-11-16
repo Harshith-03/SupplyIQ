@@ -1,0 +1,10 @@
+{
+  "_note": "UNVERIFIED placeholders in M5 id format. After building the M5 subset, run validate_datasets.py --m5-items <file> and replace any id not in your subset.",
+  "items": ["FOODS_3_090", "FOODS_3_586", "FOODS_3_252", "FOODS_3_714", "HOBBIES_1_004", "HOBBIES_1_369", "HOBBIES_2_129", "HOUSEHOLD_1_118", "HOUSEHOLD_1_334", "HOUSEHOLD_2_348"],
+  "stores": ["CA_1", "CA_2", "TX_1", "TX_2", "WI_1", "WI_2"],
+  "aliases": {
+    "Product A": "FOODS_3_090", "Product B": "FOODS_3_586", "Product C": "HOBBIES_1_004",
+    "Product D": "HOUSEHOLD_1_118", "Product E": "FOODS_3_252", "Product F": "HOBBIES_1_369",
+    "Product G": "HOUSEHOLD_1_334", "Product H": "FOODS_3_714"
+  }
+}
