@@ -27,3 +27,13 @@ Owner: all
 - **Supplier numbers in queries are user-supplied hypotheticals** stated in the query text, never tool facts. "Cheapest supplier for item X" queries assume a labelled synthetic supplier catalog or web search (decision pending).
 - **Benchmark ground truth** is computed with `supplyiq/data/reference_formulas.py`. Forecast-dependent tasks are graded by recomputing from the agent's own forecast output; forecast quality is graded vs M5 holdout.
 - **Item IDs in `data/reference/entity_aliases.json` are placeholders** until verified against the M5 subset (`validate_datasets.py --m5-items`).
+
+## XGBoost forecasting - Step 1 decisions (M5 subset, splits, baselines)
+- **Subset:** 3 stores (CA_1, TX_1, WI_1: one per state). Items = EITHER an explicit list in `configs/forecast.yaml` (`subset.items`, used to align with the synthetic inventory dataset) OR, if that list is empty, the top 10 items per category by units sold in those stores during the TRAIN window only (ties by item_id). The chosen ids and how they were chosen are committed in `data/reference/m5_subset.json`; NLP queries and the agent benchmark must use these ids.
+- **Chronological splits on `sales_train_evaluation.csv` (1,941 days):** train d_1..d_1885, val d_1886..d_1913, test d_1914..d_1941 (28-day blocks matching the M5 horizon). Test is scored once, at the end (`run_baselines.py` refuses the test split without `--final`).
+- **No future leakage:** item selection ignores val/test days; baselines use only days before the split starts (both unit-tested).
+- **Unpriced rows dropped:** NaN `sell_price` means the item was not yet on sale in that store/week, not zero demand. Series with no history before a split's cutoff are skipped by the baselines; XGBoost must be scored on exactly the same rows.
+- **Shared forecasting metrics:** MAE, RMSE, WAPE live in `src/supplyiq/eval/forecast_metrics.py`.
+- **Baselines:** naive (last value), seasonal-naive (7 days), moving average (28 days).
+- **PROPOSED, confirm in Step 2:** lag/rolling features use lags >= 28 days so one model can serve any horizon 1..28 without recursive forecasting.
+- **PROPOSED, confirm with team:** the forecast tool forecasts from a fixed cutoff (end of val, d_1913) so answers can be verified against M5 actuals in the agent benchmark. "All stores" (store_id null) = sum over the subset stores.
