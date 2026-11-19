@@ -37,3 +37,11 @@ Owner: all
 - **Baselines:** naive (last value), seasonal-naive (7 days), moving average (28 days).
 - **PROPOSED, confirm in Step 2:** lag/rolling features use lags >= 28 days so one model can serve any horizon 1..28 without recursive forecasting.
 - **PROPOSED, confirm with team:** the forecast tool forecasts from a fixed cutoff (end of val, d_1913) so answers can be verified against M5 actuals in the agent benchmark. "All stores" (store_id null) = sum over the subset stores.
+
+## XGBoost forecasting - Step 2 decisions (features and training)
+- **Direct multi-horizon design (confirms the earlier proposal):** every history feature for target day t uses only sales up to day t-28 (lags 28/35/42/49/56/364 and rolling mean/std/zero-share windows of 7/14/28/56 days that END at t-28). One model therefore forecasts any horizon 1..28 days after a cutoff with no recursive prediction. Trade-off: even for short horizons the most recent 27 days are not used; per-horizon models are a possible later improvement.
+- **Known-in-advance inputs:** calendar (weekday, month, day of month, week of year, event flag/type, SNAP flag of the store's state) and `sell_price` / `price_ratio_28` of the target day (M5 publishes future prices). Static codes: category, department, store (fixed lookups, so they are identical across splits).
+- **Gaps:** history features are computed on a complete day grid per series, so days missing from the table (item not yet on sale) yield NaN instead of silently shifting a lag. NaN is passed to XGBoost, which handles it natively.
+- **Objective:** `reg:tweedie` (variance power 1.1) as the starting point for intermittent non-negative counts; hyperparameters live in `configs/forecast_model.yaml` and are tuned on VALIDATION only. Predictions are clipped at 0.
+- **Validation only:** `scripts/train_xgb.py` fits on the train split, uses val for early stopping/selection, and compares against the naive baselines on exactly the same rows. It never scores the test split. The trained model goes to `models/` (not committed, share via team Drive); metrics go to `results/forecast_xgb_val.json` (committed).
+- **Leakage test:** a unit test tampers with sales after day 40 and checks that no feature for a day before 68 changes.
