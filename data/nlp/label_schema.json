@@ -1,0 +1,53 @@
+{
+  "intents": [
+    "demand_forecasting",
+    "inventory_optimization",
+    "supplier_selection",
+    "risk_analysis",
+    "cost_analysis",
+    "procurement_optimization"
+  ],
+  "tool_labels": ["forecast", "calculator", "python", "web_search"],
+  "tool_label_to_function": {
+    "forecast": "forecast_demand",
+    "calculator": "inventory_calculator",
+    "python": "python_analysis",
+    "web_search": "web_search"
+  },
+  "tool_contracts": {
+    "forecast_demand": {
+      "args": {"item_id": "str (M5 item_id)", "store_id": "str|null (null = all stores)", "horizon_days": "int, 1..28"},
+      "returns": {"daily_forecast": "list[float]", "mean_daily_demand": "float", "total_demand": "float"}
+    },
+    "inventory_calculator": {
+      "args": {"operation": "one of the operations below", "params": "dict"},
+      "returns": "{<operation>: float, ...}  (result key == operation name)",
+      "operations": {
+        "reorder_point": ["avg_daily_demand", "lead_time_days", "safety_stock"],
+        "safety_stock": ["service_level", "std_daily_demand", "lead_time_days"],
+        "eoq": ["annual_demand", "order_cost", "holding_cost_per_unit"],
+        "days_of_supply": ["on_hand", "avg_daily_demand"],
+        "order_frequency": ["annual_demand", "order_quantity"],
+        "inventory_turnover": ["cogs", "average_inventory_value"],
+        "order_quantity": ["target_demand", "on_hand", "safety_stock"],
+        "days_until_reorder": ["on_hand", "avg_daily_demand", "lead_time_days", "safety_stock"],
+        "annual_holding_cost": ["average_inventory_units", "unit_cost", "holding_rate"],
+        "period_holding_cost": ["average_inventory_units", "unit_cost", "holding_rate", "days"],
+        "total_annual_cost": ["annual_demand", "order_quantity", "order_cost", "holding_cost_per_unit", "unit_cost"],
+        "stockout_cost": ["units_short", "unit_margin"],
+        "landed_cost": ["unit_price", "quantity", "shipping_cost"],
+        "budget_coverage": ["budget", "unit_cost", "avg_daily_demand"],
+        "price_change_impact": ["annual_spend", "pct_change"]
+      }
+    },
+    "python_analysis": {
+      "args": {"task": "one of the tasks below", "params": "dict"},
+      "tasks": ["simulate_delay", "compare_suppliers", "monte_carlo_stockout", "sensitivity_analysis",
+                "abc_analysis", "demand_variability", "seasonality_profile", "peak_day", "compare_with_history",
+                "scenario_demand_shock", "hhi_concentration", "best_price_break", "compare_order_policies",
+                "lookup_supplier_prices"]
+    },
+    "web_search": {"args": {"query": "str"}, "returns": {"results": "list[{title, snippet, url}]"}}
+  },
+  "reference_syntax": "A string arg beginning with '$stepN.' (N is 1-based call index) means 'use field of step N output'. Simple arithmetic after the reference is allowed, e.g. '$step1.mean_daily_demand * 365'. '$extract(stepN.field, name)' means the agent/LLM must extract that value from unstructured tool output (e.g. web results)."
+}
