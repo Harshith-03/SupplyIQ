@@ -1,0 +1,17 @@
+# Settings for the shared XGBoost demand-forecasting pipeline (M5).
+# Changing the subset or the splits changes results for everyone: log it in docs/decisions.md.
+data:
+  raw_dir: data/raw/m5                   # NOT committed (see CONTRIBUTING.md)
+  processed_dir: data/processed       # NOT committed
+  sales_file: sales_train_evaluation.csv
+  calendar_file: calendar.csv
+  prices_file: sell_prices.csv
+subset:
+  stores: [CA_1, TX_1, WI_1]          # one store per state
+  categories: [FOODS, HOBBIES, HOUSEHOLD]
+  items_per_category: 10              # top-N by units sold in the TRAIN window only
+  items: []                           # OPTIONAL explicit M5 item_ids (e.g. the items in the inventory dataset).
+                                      # If non-empty they REPLACE the rule above.
+splits:
+  horizon_days: 28                    # test = last 28 days, val = the 28 days before, train = the rest
+drop_unpriced_rows: true              # NaN sell_price = item not yet on sale in that store/week
